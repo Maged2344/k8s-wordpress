@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wordpress-ingress
+  namespace: default  
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx  # Corrected location of ingressClassName
+  rules:
+    - host: maged-wordpress-k8s.cloud-stacks.com  # Your domain name
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wordpress  # Your WordPress service name
+                port:
+                  number: 80  # Your WordPress service port
+  tls:
+    - hosts:
+        - maged-wordpress-k8s.cloud-stacks.com  # Your domain name
+      secretName: nginx-ingress-tls  # Secret with TLS cert and key

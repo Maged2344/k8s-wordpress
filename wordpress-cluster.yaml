@@ -1,0 +1,37 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: maged-cluster
+  region: us-east-1
+  version: "1.27"
+
+vpc:
+  id: "vpc-0154d4fe0f94d4e49"
+  subnets:
+    private:
+      us-east-1a:
+        id: "subnet-08183734597cea79f"
+      us-east-1b:
+        id: "subnet-0846185b58b06ff27"  
+    public:
+      us-east-1a:
+        id: "subnet-075dcad20dd0aafff"
+      us-east-1b:
+        id: "subnet-043e5f37d77d4188c" 
+
+iam:
+  withOIDC: false  # OIDC is not required for this role
+  serviceRoleARN: arn:aws:iam::908027396615:role/maged-eks-minimal-cluster-role
+
+nodeGroups:
+  - name: wordpress-nodes
+    instanceType: t3.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
+    volumeSize: 25
+    amiFamily: AmazonLinux2
+    privateNetworking: true
+    tags:
+      Name: "maged-wordpress-node"
