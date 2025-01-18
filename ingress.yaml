@@ -22,3 +22,4 @@ spec:
     - hosts:
         - maged-wordpress-k8s.cloud-stacks.com  # Your domain name
       secretName: nginx-ingress-tls  # Secret with TLS cert and key
+
