@@ -1,1 +1,141 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-pass
+type: Opaque
+data:
+  password: bWFnZWQ1MDA=  # Base64 encoded value of 'maged500'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: wordpress:latest
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: "10.0.4.155:3306"  
+            - name: WORDPRESS_DB_USER
+              value: "wp_user"      
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass  
+                  key: password    
+            - name: WORDPRESS_DB_NAME
+              value: "wordpress_db"     
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "200m"  
+            limits:
+              cpu: "500m"  
+      #     volumeMounts:
+      #       - name: wordpress-storage
+      #         mountPath: /var/www/html 
+      # volumes:
+      #   - name: wordpress-storage
+      #     persistentVolumeClaim:
+      #       claimName: wordpress-pvc  
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wordpress-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wordpress
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+---
+apiVersion: v1
+kind: Service
+metadata:
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app: wordpress
+  name: wordpress
+  namespace: default
+spec:
+  allocateLoadBalancerNodePorts: true
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 30822
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: wordpress
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wordpress-ingress
+  namespace: default  
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx  # Corrected location of ingressClassName
+  rules:
+    - host: maged-wordpress-k8s.cloud-stacks.com  # Your domain name
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wordpress  # Your WordPress service name
+                port:
+                  number: 80  # Your WordPress service port
+  tls:
+    - hosts:
+        - maged-wordpress-k8s.cloud-stacks.com  # Your domain name
+      secretName: nginx-ingress-tls  # Secret with TLS cert and key
 
