@@ -9,18 +9,10 @@ metadata:
   name: wordpress
   namespace: default
 spec:
-  allocateLoadBalancerNodePorts: true
-  externalTrafficPolicy: Cluster
-  internalTrafficPolicy: Cluster
-  ipFamilies:
-  - IPv4
-  ipFamilyPolicy: SingleStack
   ports:
-  - nodePort: 30822
-    port: 80
-    protocol: TCP
-    targetPort: 80
+   - port: 80
+     protocol: TCP
+     targetPort: 80
   selector:
     app: wordpress
-  sessionAffinity: None
   type: ClusterIP
